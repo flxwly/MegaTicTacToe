@@ -1,8 +1,3 @@
-//
-// Created by flxwl on 07.02.2023.
-//
-
-#include <iostream>
 #include "GameWindow.h"
 
 
@@ -132,8 +127,11 @@ void GameWindow::update() {
 
                     curPlayer = !curPlayer;
 
+
                     if (int w = checkWin(largeField.x, largeField.y); w != 0) {
                         winner = w;
+                    } else if (!canMakeAMove(smallState[nextLargeMove.x][nextLargeMove.y])) {
+                        winner = (curPlayer) ? 1 : 2;
                     }
                 }
         }
@@ -269,7 +267,6 @@ GameWindow::GameWindow(sf::VideoMode mode, const sf::String &title, sf::Uint32 s
     init();
 
     if (!gameFont.loadFromFile("../fonts/arial.ttf")) {
-        std::cerr << "Couldn't load font!" << std::endl;
         close();
     }
 }
@@ -289,6 +286,16 @@ void GameWindow::init() {
 
         }
     }
+}
+
+bool GameWindow::canMakeAMove(std::array<std::array<int, 3>, 3> box) {
+    for (auto r: box) {
+        for (auto e: r) {
+            if (e == 0)
+                return true;
+        }
+    }
+    return false;
 }
 
 

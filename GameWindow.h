@@ -18,6 +18,7 @@ public:
     int checkLargeState(int outerX, int outerY, int innerX, int innerY);
     int checkWin(int outerX, int outerY);
     int checkBox(std::array<std::array<int, 3>, 3> box, int x, int y);
+    bool canMakeAMove(std::array<std::array<int, 3>, 3> box);
 
     GameWindow() = default;
     GameWindow(sf::VideoMode mode, const sf::String& title, sf::Uint32 style = sf::Style::Default, const sf::ContextSettings& settings = sf::ContextSettings());
