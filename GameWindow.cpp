@@ -83,13 +83,26 @@ void GameWindow::update() {
 
     sf::Vector2f topLeft = sf::Vector2f((getSize().x - size) / 2, (getSize().y - size) / 2);
 
+    sf::View view = getDefaultView();
+
     if (sf::Event event; pollEvent(event)) {
         switch (event.type) {
             case sf::Event::Closed:
                 close();
                 break;
 
+            case sf::Event::Resized: {
+                sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+                setView(sf::View(visibleArea));
+                }
+                break;
+
             case sf::Event::MouseButtonPressed:
+                if (winner != 0) {
+                    init();
+                    break;
+                }
+
                 if (event.mouseButton.button == sf::Mouse::Left) {
 
                     sf::Vector2i largeField =
@@ -115,15 +128,13 @@ void GameWindow::update() {
                     smallState[largeField.x][largeField.y][smallField.x][smallField.y] = (curPlayer) ? 1 : 2;
                     largeState[largeField.x][largeField.y] = checkLargeState(largeField.x, largeField.y, smallField.x, smallField.y);
 
-                    if (int winner = checkWin(largeField.x, largeField.y); winner != 0) {
-                        std::cout << "Player " << winner << " hat gewonnen!";
-                        close();
-                        return;
-                    }
-
                     nextLargeMove = smallField;
 
                     curPlayer = !curPlayer;
+
+                    if (int w = checkWin(largeField.x, largeField.y); w != 0) {
+                        winner = w;
+                    }
                 }
         }
     }
@@ -132,6 +143,8 @@ void GameWindow::update() {
 }
 
 void GameWindow::render() {
+
+
     clear(sf::Color::White);
 
     const int size = static_cast<int> (std::min(getSize().x, getSize().y));
@@ -149,15 +162,17 @@ void GameWindow::render() {
 
             // draw outer rect
             rect.setSize(largeCellSize);
-            rect.setPosition(topLeft.x + largeX * largeCellSize.x,
-                             topLeft.y + largeY * largeCellSize.y);
+            rect.setOrigin(rect.getGlobalBounds().width / 2, rect.getGlobalBounds().height / 2);
+            rect.setPosition(topLeft.x + largeX * largeCellSize.x + largeCellSize.x / 2,
+                             topLeft.y + largeY * largeCellSize.y + largeCellSize.x / 2);
             rect.setOutlineThickness(2);
             draw(rect);
 
             // draw player mark
             if (largeState[largeX][largeY] != 0) {
-                circ.setRadius(largeCellSize.x / 2);
-                circ.setOutlineThickness(0.1f);
+                circ.setRadius(largeCellSize.x / 2 - 4);
+                circ.setOrigin(circ.getGlobalBounds().width / 2, circ.getGlobalBounds().height / 2);
+                circ.setOutlineThickness(1);
                 circ.setPosition(rect.getPosition());
                 switch (largeState[largeX][largeY]) {
                     case 1:
@@ -178,17 +193,19 @@ void GameWindow::render() {
             // draw inner rectangles + player marks
             rect.setOutlineThickness(1);
             rect.setSize(smallCellSize);
+            rect.setOrigin(rect.getGlobalBounds().width / 2, rect.getGlobalBounds().height / 2);
             for (int smallX = 0; smallX < 3; ++smallX) {
                 for (int smallY = 0; smallY < 3; ++smallY) {
 
                     // draw inner rect
-                    rect.setPosition(topLeft.x + largeX * largeCellSize.x + smallX * smallCellSize.x,
-                                     topLeft.y + largeY * largeCellSize.y + smallY * smallCellSize.y);
+                    rect.setPosition(topLeft.x + largeX * largeCellSize.x + smallX * smallCellSize.x + smallCellSize.x / 2,
+                                     topLeft.y + largeY * largeCellSize.y + smallY * smallCellSize.y + smallCellSize.x / 2);
                     draw(rect);
 
                     if (smallState[largeX][largeY][smallX][smallY] != 0) {
-                        circ.setRadius(smallCellSize.x / 2);
-                        circ.setOutlineThickness(0.1f);
+                        circ.setRadius(smallCellSize.x / 2 - 2);
+                        circ.setOrigin(circ.getGlobalBounds().width / 2, circ.getGlobalBounds().height / 2);
+                        circ.setOutlineThickness(2);
                         circ.setPosition(rect.getPosition());
                         switch (smallState[largeX][largeY][smallX][smallY]) {
                             case 1:
@@ -214,19 +231,52 @@ void GameWindow::render() {
     // draw next Move
     if ( nextLargeMove.x != -1 && nextLargeMove.y != -1) {
         rect.setSize(largeCellSize);
-        rect.setPosition(largeCellSize.x * nextLargeMove.x, largeCellSize.y * nextLargeMove.y);
+        rect.setOrigin(rect.getGlobalBounds().width / 2, rect.getGlobalBounds().height / 2);
+        rect.setPosition(topLeft.x + largeCellSize.x * nextLargeMove.x + largeCellSize.x / 2, topLeft.y + largeCellSize.y * nextLargeMove.y + largeCellSize.y / 2);
         rect.setOutlineColor(sf::Color::Yellow);
         if ((frames / 10) % 2) {
             draw(rect);
         }
     }
 
-    display();
+    // Draw winner text
+    if (winner != 0) {
+        sf::Text text;
+        text.setFont(gameFont);
+        text.setCharacterSize(50);
+        text.setString("Spieler " + std::to_string(winner) + " hat gewonnen!");
+        text.setOutlineColor(sf::Color::Black);
+        text.setOutlineThickness(2);
+        if ((frames / 5) % 2) {
+            text.setFillColor(sf::Color::Black);
+        } else {
+            if (winner == 1)
+                text.setFillColor(sf::Color::Blue);
+            else
+                text.setFillColor(sf::Color::Red);
+        }
+        text.setOrigin(text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2);
+        text.setPosition(topLeft.x + size / 2, topLeft.y + size / 2);
+        draw(text);
+    }
+
     frames++;
+    display();
 }
 
 GameWindow::GameWindow(sf::VideoMode mode, const sf::String &title, sf::Uint32 style,
                        const sf::ContextSettings &settings) : RenderWindow(mode, title, style, settings) {
+    init();
+
+    if (!gameFont.loadFromFile("../fonts/arial.ttf")) {
+        std::cerr << "Couldn't load font!" << std::endl;
+        close();
+    }
+}
+
+void GameWindow::init() {
+    curPlayer = true;
+    winner = 0;
     nextLargeMove = {-1, -1};
     for (int largeX = 0; largeX < 3; ++largeX) {
         for (int largeY = 0; largeY < 3; ++largeY) {
