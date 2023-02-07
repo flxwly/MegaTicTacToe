@@ -136,8 +136,6 @@ void GameWindow::update() {
                 }
         }
     }
-
-
 }
 
 void GameWindow::render() {
@@ -266,7 +264,7 @@ GameWindow::GameWindow(sf::VideoMode mode, const sf::String &title, sf::Uint32 s
                        const sf::ContextSettings &settings) : RenderWindow(mode, title, style, settings) {
     init();
 
-    if (!gameFont.loadFromFile("../fonts/arial.ttf")) {
+    if (!gameFont.loadFromFile("fonts/arial.ttf")) {
         close();
     }
 }
