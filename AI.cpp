@@ -49,11 +49,19 @@ void GameNode::generateTree(int depth, int maxDepth) {
     }
 
     GameNode best = possibleContinuations.at(0);
-    for (int i = 1; i < possibleContinuations.size(); ++i) {
-        if (possibleContinuations[i].eval() < best.eval()) {
-            best = possibleContinuations[i];
+    if (curPlayer == Players::red) {
+        for (int i = 1; i < possibleContinuations.size(); ++i) {
+           if (possibleContinuations[i].eval() < best.eval()) {
+                best = possibleContinuations[i];
+            }
+        }
+    } else {
+           if (possibleContinuations[i].eval() > best.eval()) {
+                best = possibleContinuations[i];
+            }
         }
     }
+    
     possibleContinuations.clear();
     possibleContinuations.push_back(best);
 }
@@ -68,9 +76,12 @@ int GameNode::eval() {
         // Static eval: Max Number of moves - moves done if won
         // Max number of moves: 99
 
-        if (winner != player && winner != Players::neutral) {
+        if (winner == Players::blue) {
             evaluation = 100;
             return 100;
+        } else if (winner == Players::red) {
+            evaluation = -100;
+            return -100;
         }
 
         int counter = 0;
@@ -85,10 +96,18 @@ int GameNode::eval() {
                 }
             }
         }
-        evaluation = counter;
+        if (player == Players::blue) {
+            evaluation = 99 - counter;
+        } else {
+            evalution = -99 + counter;
+        }
         return counter;
     } else {
-        evaluation = std::min_element(possibleContinuations.begin(), possibleContinuations.end(), [](GameNode &a, GameNode &b) {return a.eval() > b.eval(); })->eval();
+        if (player == Player::blue) {
+            evaluation = std::max_element(possibleContinuations.begin(), possibleContinuations.end(), [](GameNode &a, GameNode &b) {return a.eval() > b.eval(); })->eval();
+        } else {
+            evaluation = std::min_element(possibleContinuations.begin(), possibleContinuations.end(), [](GameNode &a, GameNode &b) {return a.eval() > b.eval(); })->eval();
+        }
         return evaluation;
     }
 }
