@@ -3,29 +3,38 @@
 
 #include <array>
 
+
 enum Players {
     neutral = 0, blue = 1, red = 2
 };
+
+typedef std::array<std::array<Players, 3>, 3> SimpleGrid;
+typedef std::array<std::array<std::array<std::array<Players, 3>, 3>, 3>, 3> LargeGrid;
 
 class GameLogic {
 public:
     GameLogic() { init(); };
 
     void init();
+
     void update(int outerX, int outerY, int innerX, int innerY);
 
 
     Players winner = Players::neutral;
     Players curPlayer = neutral;
-    std::array<std::array<Players, 3>, 3> largeState{}; // default all 0
-    std::array<std::array<std::array<std::array<Players, 3>, 3>, 3>, 3> smallState{}; // default all 0
+    SimpleGrid largeState{}; // default all 0
+    LargeGrid smallState{}; // default all 0
 
     int nextLargeMoveX = -1, nextLargeMoveY = -1;
 
-    Players checkLargeState(int outerX, int outerY, int innerX, int innerY);
-    Players checkWin(int outerX, int outerY);
-    static Players checkBox(std::array<std::array<Players, 3>, 3> box, int x, int y);
-    bool canMakeAMove(std::array<std::array<Players, 3>, 3> box);
+    static Players checkLargeState(const SimpleGrid &largeState, const LargeGrid &smallState,
+                                   int outerX, int outerY, int innerX, int innerY);
+
+    static Players checkWin(const SimpleGrid &largeState, int outerX, int outerY);
+
+    static Players checkBox(SimpleGrid box, int x, int y);
+
+    static bool canMakeAMove(SimpleGrid box);
 
 };
 

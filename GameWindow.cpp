@@ -25,10 +25,18 @@ void GameWindow::update() {
             case sf::Event::MouseButtonPressed:
 
                 if (event.mouseButton.button == sf::Mouse::Left) {
-                    game.update((event.mouseButton.x - topLeft.x) / largeCellSize.x,
-                                (event.mouseButton.y - topLeft.y) / largeCellSize.y,
-                                static_cast<int> ((event.mouseButton.x - topLeft.x) / smallCellSize.x) % 3,
-                                static_cast<int>((event.mouseButton.y - topLeft.y) / smallCellSize.y) % 3);
+                    if (game.curPlayer == Players::blue) {
+                        game.update((event.mouseButton.x - topLeft.x) / largeCellSize.x,
+                                    (event.mouseButton.y - topLeft.y) / largeCellSize.y,
+                                    static_cast<int> ((event.mouseButton.x - topLeft.x) / smallCellSize.x) % 3,
+                                    static_cast<int>((event.mouseButton.y - topLeft.y) / smallCellSize.y) % 3);
+                    } else {
+                        Move m = ai.getBestMove();
+                        std::cout << "Move: " << m.outerX * 3 + m.innerX << " | " << m.outerY * 3 + m.innerY << std::endl;
+
+                        game.update(m.outerX, m.outerY, m.innerX, m.innerY);
+                    }
+                    ai.update(game.curPlayer, game.nextLargeMoveX, game.nextLargeMoveY, game.largeState, game.smallState);
                 }
         }
     }
