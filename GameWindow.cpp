@@ -1,7 +1,6 @@
 #include <iostream>
 #include "GameWindow.h"
 
-
 void GameWindow::update() {
     const int size = static_cast<int> (std::min(getSize().x, getSize().y));
     const sf::Vector2f largeCellSize = sf::Vector2f(size / 3, size / 3);
@@ -25,10 +24,16 @@ void GameWindow::update() {
             case sf::Event::MouseButtonPressed:
 
                 if (event.mouseButton.button == sf::Mouse::Left) {
-                    game.update((event.mouseButton.x - topLeft.x) / largeCellSize.x,
-                                (event.mouseButton.y - topLeft.y) / largeCellSize.y,
-                                static_cast<int> ((event.mouseButton.x - topLeft.x) / smallCellSize.x) % 3,
-                                static_cast<int>((event.mouseButton.y - topLeft.y) / smallCellSize.y) % 3);
+                    if (game.curPlayer == Players::blue && false) {
+                        game.update((event.mouseButton.x - topLeft.x) / largeCellSize.x,
+                                    (event.mouseButton.y - topLeft.y) / largeCellSize.y,
+                                    static_cast<int> ((event.mouseButton.x - topLeft.x) / smallCellSize.x) % 3,
+                                    static_cast<int>((event.mouseButton.y - topLeft.y) / smallCellSize.y) % 3);
+                    } else {
+						Move move = ai.findBestMove();
+                        game.update(move.outerX, move.outerY, move.innerX, move.innerY);
+                    }
+                    ai.update(game.curPlayer, game.nextLargeMoveX, game.nextLargeMoveY, game.largeState, game.smallState);
                 }
         }
     }

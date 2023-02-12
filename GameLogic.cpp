@@ -4,7 +4,7 @@
 #include "GameWindow.h"
 
 
-Players GameLogic::checkBox(std::array<std::array<Players, 3>, 3> box, int x, int y) {
+Players GameLogic::checkBox(SimpleGrid box, int x, int y) {
     Players player = box[x][y];
 
     // check row
@@ -64,11 +64,13 @@ Players GameLogic::checkBox(std::array<std::array<Players, 3>, 3> box, int x, in
     }
 }
 
-Players GameLogic::checkWin(int outerX, int outerY) {
+
+Players GameLogic::checkWin(const SimpleGrid &largeState, int outerX, int outerY) {
     return checkBox(largeState, outerX, outerY);
 }
 
-Players GameLogic::checkLargeState(int outerX, int outerY, int innerX, int innerY) {
+Players GameLogic::checkLargeState(const SimpleGrid &largeState, const LargeGrid &smallState, int outerX, int outerY,
+                                   int innerX, int innerY) {
     // checkLargeState
     if (largeState[outerX][outerY] != Players::neutral)
         return largeState[outerX][outerY];
@@ -97,15 +99,14 @@ void GameLogic::update(int outerX, int outerY, int innerX, int innerY) {
         return;
 
     smallState[outerX][outerY][innerX][innerY] = curPlayer;
-    largeState[outerX][outerY] = checkLargeState(outerX, outerY, innerX,
-                                                 innerY);
+    largeState[outerX][outerY] = checkLargeState(largeState, smallState, outerX, outerY, innerX, innerY);
 
     nextLargeMoveX = innerX;
     nextLargeMoveY = innerY;
 
     curPlayer = (curPlayer == Players::red) ? Players::blue : Players::red;
 
-    if (Players w = checkWin(outerX, outerY); w != Players::neutral) {
+    if (Players w = checkWin(largeState, outerX, outerY); w != Players::neutral) {
         winner = w;
     } else if (!canMakeAMove(smallState[nextLargeMoveX][nextLargeMoveY])) {
         nextLargeMoveX = -1;
@@ -114,7 +115,7 @@ void GameLogic::update(int outerX, int outerY, int innerX, int innerY) {
 }
 
 void GameLogic::init() {
-    curPlayer = Players::red;
+    curPlayer = Players::blue;
     winner = Players::neutral;
     nextLargeMoveX = -1;
     nextLargeMoveY = -1;
@@ -131,7 +132,7 @@ void GameLogic::init() {
     }
 }
 
-bool GameLogic::canMakeAMove(std::array<std::array<Players, 3>, 3> box) {
+bool GameLogic::canMakeAMove(SimpleGrid box) {
     for (auto r: box) {
         for (auto e: r) {
             if (e == Players::neutral)

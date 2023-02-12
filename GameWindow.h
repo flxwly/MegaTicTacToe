@@ -12,8 +12,7 @@ public:
     sf::Font gameFont;
 
     GameLogic game = GameLogic();
-    AI red = AI();
-    AI blue = AI();
+    AI ai = AI(game.curPlayer, game.largeState, game.smallState);
 
     GameWindow() = default;
     GameWindow(sf::VideoMode mode, const sf::String& title, sf::Uint32 style = sf::Style::Default, const sf::ContextSettings& settings = sf::ContextSettings());
