@@ -3,9 +3,11 @@
 
 #include <vector>
 #include <map>
+#include <cmath>
+#include <iostream>
 #include "GameLogic.h"
 
-#define AI_SEARCH_DEPTH 81
+#define AI_SEARCH_DEPTH 7
 
 struct Move {
 	Move() = default;
@@ -51,16 +53,26 @@ public:
     void update(Players curPlayer, int nextMoveX, int nextMoveY,
                 SimpleGrid large, LargeGrid small);
 
-    int staticEval();
+    float staticEval();
 	EvalResult search(int depth,
 		float alpha = -std::numeric_limits<float>::infinity(),
 		float beta = std::numeric_limits<float>::infinity());
 
 	int movesLookedAt = 0;
+    int transpositionsUsed = 0;
+    int transpositionsAdded = 0;
+    int transpositionsOverridden = 0;
 	Move findBestMove();
 
     std::vector<Move> getPossibleMoves();
     void orderMoves();
+
+    template<typename T>
+    void rotateMatrix(std::array<std::array<T, 3>, 3> &matrix);
+    std::string str();
+
+    std::vector<std::string> getTranspositions();
+    static std::map<std::string, std::pair<float, int>> transpositions;
 };
 
 
