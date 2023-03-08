@@ -6,7 +6,6 @@
 #include <cmath>
 #include <iostream>
 #include "GameLogic.h"
-#include "Timer.hpp"
 
 #define AI_SEARCH_DEPTH 5
 
