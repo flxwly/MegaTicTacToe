@@ -6,8 +6,9 @@
 #include <cmath>
 #include <iostream>
 #include "GameLogic.h"
+#include "Timer.hpp"
 
-#define AI_SEARCH_DEPTH 7
+#define AI_SEARCH_DEPTH 5
 
 struct Move {
 	Move() = default;
@@ -22,17 +23,43 @@ struct Move {
 
 struct Coord {
 	Coord(int x, int y) : x(x), y(y) {};
-	void set(int x, int y) {this->x = x; this->y = y;};
+	void set(int _x, int _y) {this->x = _x; this->y = _y;};
 
 	int x, y;
 };
 
 struct EvalResult {
-	EvalResult(float eval) : move(), eval(eval) {};
+	explicit EvalResult(float eval) : move(), eval(eval) {};
 	EvalResult(Move move, float eval) : move(move), eval(eval) {};
 
 	Move move;
 	float eval;
+};
+
+struct DebugInfo {
+    DebugInfo() : movesLookedAt(0), transpositionsUsed(0), transpositionsAdded(0), transpositionsOverridden(0) {};
+    DebugInfo(int movesLookedAt, int transpositionsUsed, int transpositionsAdded, int transpositionsOverridden) :
+    movesLookedAt(movesLookedAt), transpositionsUsed(transpositionsUsed), transpositionsAdded(transpositionsAdded),
+    transpositionsOverridden(transpositionsOverridden) {};
+
+    int movesLookedAt = 0;
+    int transpositionsUsed = 0;
+    int transpositionsAdded = 0;
+    int transpositionsOverridden = 0;
+
+    void reset() {
+        movesLookedAt = 0;
+        transpositionsUsed = 0;
+        transpositionsAdded = 0;
+        transpositionsOverridden = 0;
+    }
+
+    void printInfo() {
+        std::cout << "TranspositionsAdded: " << transpositionsAdded << std::endl
+                  << "TranspositionsUpdated: " << transpositionsOverridden << std::endl
+                  << "TranspositionsUsed: " << transpositionsUsed << std::endl
+                  << "Looked at: " << movesLookedAt << " moves" << std::endl;
+    }
 };
 
 
@@ -58,21 +85,17 @@ public:
 		float alpha = -std::numeric_limits<float>::infinity(),
 		float beta = std::numeric_limits<float>::infinity());
 
-	int movesLookedAt = 0;
-    int transpositionsUsed = 0;
-    int transpositionsAdded = 0;
-    int transpositionsOverridden = 0;
+    DebugInfo debugInfo;
 	Move findBestMove();
 
     std::vector<Move> getPossibleMoves();
-    void orderMoves();
 
-    template<typename T>
-    void rotateMatrix(std::array<std::array<T, 3>, 3> &matrix);
     std::string str();
 
     std::vector<std::string> getTranspositions();
     static std::map<std::string, std::pair<float, int>> transpositions;
+
+    void printBoard();
 };
 
 

@@ -3,13 +3,14 @@
 
 #include <array>
 
+#define GRID_SIZE 3
 
 enum Players {
     neutral = '#', blue = 'b', red = 'r'
 };
 
-typedef std::array<std::array<Players, 3>, 3> SimpleGrid;
-typedef std::array<std::array<std::array<std::array<Players, 3>, 3>, 3>, 3> LargeGrid;
+typedef std::array<std::array<Players, GRID_SIZE>, GRID_SIZE> SimpleGrid;
+typedef std::array<std::array<SimpleGrid, GRID_SIZE>, GRID_SIZE> LargeGrid;
 
 class GameLogic {
 public:
@@ -21,7 +22,7 @@ public:
 
 
     Players winner = Players::neutral;
-    Players curPlayer = neutral;
+    Players curPlayer = Players::blue;
     SimpleGrid largeState{}; // default all 0
     LargeGrid smallState{}; // default all 0
 

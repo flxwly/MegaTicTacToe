@@ -4,14 +4,14 @@
 std::map<std::string, std::pair<float, int>>AI::transpositions = {};
 
 float AI::staticEval() {
-    const int largeFieldWeight = 10;
-    const int smallFieldWeight = 0;
+    const int largeFieldWeight = 100;
+    const int smallFieldWeight = 1;
 
     float score = 0;
     for (int x = 0; x < 3; ++x) {
         for (int y = 0; y < 3; ++y) {
             if (largeState[x][y] == curPlayer) {
-                score += largeFieldWeight;
+                score = +largeFieldWeight;
             } else if (largeState[x][y] != Players::neutral) {
                 score -= largeFieldWeight;
             } else {
@@ -35,19 +35,19 @@ EvalResult AI::search(int depth, float alpha, float beta) {
 
     //std::cout << "depth: " << depth << " alpha: " << alpha << " beta: " << beta << std::endl;
 
-    if (depth == 0)
-        return {static_cast<float>(staticEval())};
+    if (depth <= 0) {
+        return EvalResult(staticEval());
+    }
+
     Move bestMove = Move();
     for (Move m: getPossibleMoves()) {
-        movesLookedAt += 1;
-
-        if (m.outerX < 0 || m.outerY < 0 || m.innerX < 0 || m.innerY < 0)
-            std::cout << "Move: " << m.outerX << m.innerX << " | " << m.outerY << m.innerY << std::endl;
+        debugInfo.movesLookedAt += 1;
 
         // Save current state
-        const Players _lS = largeState[m.outerX][m.outerY];
-        const Players _w = winner;
-        const Coord _nM = nextOuterGrid;
+        Players _lS = largeState[m.outerX][m.outerY];
+        Players _w = winner;
+        Coord _nM = nextOuterGrid;
+        Players cp = curPlayer;
 
         // make the move
         smallState[m.outerX][m.outerY][m.innerX][m.innerY] = curPlayer;
@@ -55,8 +55,9 @@ EvalResult AI::search(int depth, float alpha, float beta) {
         winner = GameLogic::checkWin(largeState, m.outerX, m.outerY);
         nextOuterGrid.set(m.innerX, m.innerY);
         curPlayer = (curPlayer == Players::blue) ? Players::red : Players::blue;
+        // evaluate
 
-        float eval;
+        float eval = 0;
         if (winner != Players::neutral) {
             eval = beta;
         } else {
@@ -70,16 +71,16 @@ EvalResult AI::search(int depth, float alpha, float beta) {
             if (tp != transpositions.end()) {
                 if (tp->second.second >= depth) {
                     eval = tp->second.first;
-                    transpositionsUsed += 1;
+                    debugInfo.transpositionsUsed += 1;
                 } else {
-                    eval = -search(depth - 1, -alpha, -beta).eval;
+                    eval = -search(depth - 1, alpha, beta).eval;
                     tp->second = {eval, depth};
-                    transpositionsOverridden += 1;
+                    debugInfo.transpositionsOverridden += 1;
                 }
             } else {
                 eval = -search(depth - 1, -alpha, -beta).eval;
                 transpositions.insert({str(), {eval, depth}});
-                transpositionsAdded += 1;
+                debugInfo.transpositionsAdded += 1;
                 //std::cout << "Added transposition calculation..." << std::endl;
             }
         }
@@ -89,7 +90,7 @@ EvalResult AI::search(int depth, float alpha, float beta) {
         largeState[m.outerX][m.outerY] = _lS;
         nextOuterGrid = _nM;
         winner = _w;
-        curPlayer = (curPlayer == Players::blue) ? Players::red : Players::blue;
+        curPlayer = cp;
 
         if (eval > alpha) {
             alpha = eval;
@@ -107,13 +108,33 @@ std::vector<Move> AI::getPossibleMoves() {
     std::vector<Move> moves = {};
 
     if (nextOuterGrid.x != -1 && nextOuterGrid.y != -1) {
-        for (int x = 0; x < 3; ++x) {
-            for (int y = 0; y < 3; ++y) {
-                if (smallState[nextOuterGrid.x][nextOuterGrid.y][x][y] == Players::neutral) {
-                    moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, x, y);
-                }
-            }
-        }
+        auto box = smallState[nextOuterGrid.x][nextOuterGrid.y];
+
+        // middle
+        if (box[1][1] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 1, 1);
+
+        // corner points
+        if (box[0][0] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 0, 0);
+        if (box[2][0] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 2, 0);
+        if (box[0][2] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 0, 2);
+        if (box[2][2] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 2, 2);
+
+        // side points
+        if (box[1][0] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 1, 0);
+        if (box[0][1] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 0, 1);
+        if (box[2][1] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 2, 1);
+        if (box[1][2] == Players::neutral)
+            moves.emplace_back(nextOuterGrid.x, nextOuterGrid.y, 1, 2);
+
+        // if no possible moves;
         if (!moves.empty())
             return moves;
     }
@@ -142,21 +163,20 @@ void AI::update(Players _curPlayer, int nextMoveX, int nextMoveY, SimpleGrid lar
 }
 
 Move AI::findBestMove() {
-    movesLookedAt = 0;
-    transpositionsUsed = 0;
-    transpositionsOverridden = 0;
-    transpositionsAdded = 0;
+
+    debugInfo.reset();
+
     EvalResult r = search(AI_SEARCH_DEPTH);
 
-    std::cout << "TranspositionsAdded: " << transpositionsAdded << std::endl
-              << "TranspositionsUpdated: " << transpositionsOverridden << std::endl
-              << "TranspositionsUsed: " << transpositionsUsed << std::endl
-              << "Looked at: " << movesLookedAt << " moves" << std::endl
-              << "Move: " << r.move.outerX * 3 + r.move.innerX << " | " << r.move.outerY * 3 + r.move.innerY
+    debugInfo.printInfo();
+    std::cout << "Move: " << r.move.outerX << "," << r.move.innerX << " | " << r.move.outerY << "," << r.move.innerY
               << " - Eval: " << r.eval << std::endl;
 
-    if (r.eval == -std::numeric_limits<float>::infinity())
+
+    if (r.eval == -std::numeric_limits<float>::infinity()) {
+        std::cout << "No valid move found!" << std::endl;
         return getPossibleMoves().front();
+    }
 
     return r.move;
 }
@@ -165,6 +185,30 @@ Move AI::findBestMove() {
 std::vector<std::string> AI::getTranspositions() {
     LargeGrid flippedSmallState;
     SimpleGrid flippedLargeState;
+
+    auto rotateSmallState = [](LargeGrid &matrix) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = i; j < 2 - i; j++) {
+                SimpleGrid tmp1 = matrix[i][j];
+                matrix[i][j] = matrix[j][2 - i];
+                matrix[j][2 - i] = matrix[2 - i][2 - j];
+                matrix[2 - i][2 - j] = matrix[2 - j][i];
+                matrix[2 - j][i] = tmp1;
+            }
+        }
+    };
+
+    auto rotateLargeState = [](SimpleGrid &matrix) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = i; j < 2 - i; j++) {
+                Players tmp1 = matrix[i][j];
+                matrix[i][j] = matrix[j][2 - i];
+                matrix[j][2 - i] = matrix[2 - i][2 - j];
+                matrix[2 - i][2 - j] = matrix[2 - j][i];
+                matrix[2 - j][i] = tmp1;
+            }
+        }
+    };
 
     // Generate flipped grids
     for (int outerX = 0; outerX < 3; ++outerX) {
@@ -181,17 +225,17 @@ std::vector<std::string> AI::getTranspositions() {
 
     // rotate grids
     std::vector<std::string> returnVector;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         for (int outerX = 0; outerX < 3; ++outerX) {
             for (int outerY = 0; outerY < 3; ++outerY) {
-                rotateMatrix(flippedSmallState[outerX][outerY]);
-                rotateMatrix(smallState[outerX][outerY]);
+                rotateLargeState(flippedSmallState[outerX][outerY]);
+                rotateLargeState(smallState[outerX][outerY]);
             }
         }
-        rotateMatrix(smallState);
-        rotateMatrix(flippedSmallState);
-        rotateMatrix(largeState);
-        rotateMatrix(flippedLargeState);
+        rotateSmallState(smallState);
+        rotateSmallState(flippedSmallState);
+        rotateLargeState(largeState);
+        rotateLargeState(flippedLargeState);
 
         std::string fRet, ret;
         for (int outerX = 0; outerX < 3; ++outerX) {
@@ -211,6 +255,7 @@ std::vector<std::string> AI::getTranspositions() {
         returnVector.push_back(ret);
         returnVector.push_back(fRet);
     }
+
     return returnVector;
 }
 
@@ -230,15 +275,21 @@ std::string AI::str() {
     return ret;
 }
 
-template<typename T>
-void AI::rotateMatrix(std::array<std::array<T, 3>, 3> &matrix) {
-    for (int i = 0; i < 2; i++) {
-        for (int j = i; j < 2 - i; j++) {
-            T tmp1 = matrix[i][j];
-            matrix[i][j] = matrix[j][2 - i];
-            matrix[j][2 - i] = matrix[2 - i][2 - j];
-            matrix[2 - i][2 - j] = matrix[2 - j][i];
-            matrix[2 - j][i] = tmp1;
+void AI::printBoard() {
+    // print small state
+    std::cout << "Board: "<< str() << std::endl;
+    for (int i = 0; i < 3; ++i) {
+        std::cout << " -------------------------------------" << std::endl;
+        for (int j = 0; j < 3; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                std::cout << " | ";
+                for (int l = 0; l < 3; ++l) {
+                    std::cout << " " << (char) smallState[k][i][l][j] << " ";
+                }
+            }
+            std::cout << " | " << std::endl;
         }
     }
+    std::cout << " -------------------------------------" << std::endl;
+    std::cout << std::endl;
 }

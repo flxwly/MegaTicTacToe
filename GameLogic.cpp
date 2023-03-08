@@ -85,14 +85,13 @@ void GameLogic::update(int outerX, int outerY, int innerX, int innerY) {
         return;
     }
 
-
     if (outerX < 0 || outerY < 0 || outerX > 3 || outerY > 3)
         return;
 
     if (innerX < 0 || innerY < 0 || innerX > 3 || innerY > 3)
         return;
 
-    if (smallState[innerX][innerY][innerX][innerY] != Players::neutral)
+    if (smallState[outerX][outerY][innerX][innerY] != Players::neutral)
         return;
 
     if ((nextLargeMoveX != -1 && nextLargeMoveY != -1) && (nextLargeMoveX != outerX || nextLargeMoveY != outerY))

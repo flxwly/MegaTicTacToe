@@ -1,4 +1,5 @@
 #include <iostream>
+#include <future>
 #include "GameWindow.h"
 
 void GameWindow::update() {
@@ -7,6 +8,8 @@ void GameWindow::update() {
     const sf::Vector2f smallCellSize = sf::Vector2f(largeCellSize.x / 3, largeCellSize.y / 3);
 
     sf::Vector2f topLeft = sf::Vector2f((getSize().x - size) / 2, (getSize().y - size) / 2);
+    std::future<Move> bestMove;
+    bool findingBestMove = false;
 
     sf::Event event;
     while (pollEvent(event)) {
@@ -30,7 +33,14 @@ void GameWindow::update() {
                                     static_cast<int> ((event.mouseButton.x - topLeft.x) / smallCellSize.x) % 3,
                                     static_cast<int>((event.mouseButton.y - topLeft.y) / smallCellSize.y) % 3);
                     } else {
-						Move move = ai.findBestMove();
+//                        if (findingBestMove && bestMove.valid()) {
+//                            Move move = bestMove.get();
+//                            game.update(move.outerX, move.outerY, move.innerX, move.innerY);
+//                        } else if(!findingBestMove) {
+//                            bestMove = std::async(std::launch::async, AI::findBestMove, &ai);
+//                            findingBestMove = true;
+//                        }
+                        Move move = ai.findBestMove();
                         game.update(move.outerX, move.outerY, move.innerX, move.innerY);
                     }
                     ai.update(game.curPlayer, game.nextLargeMoveX, game.nextLargeMoveY, game.largeState, game.smallState);
@@ -115,6 +125,8 @@ void GameWindow::render() {
                                 circ.setOutlineColor(sf::Color(255, 0, 0, 200));
                                 break;
                             default:
+                                circ.setFillColor(sf::Color(0, 255, 0, 50));
+                                circ.setOutlineColor(sf::Color(0, 255, 0, 200));
                                 break;
                         }
                         draw(circ);
